@@ -1,0 +1,98 @@
+allprojects {
+    afterEvaluate { project ->
+        def propsFile = rootProject.file('keystore.properties')
+        def configName = 'release'
+
+        if (propsFile.exists() && android.signingConfigs.hasProperty(configName)) {
+            def props = new Properties()
+            props.load(new FileInputStream(propsFile))
+            android.signingConfigs[configName].storeFile = file(props['storeFile'])
+            android.signingConfigs[configName].storePassword = props['storePassword']
+            android.signingConfigs[configName].keyAlias = props['keyAlias']
+            android.signingConfigs[configName].keyPassword = props['keyPassword']
+        }
+    }
+}
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.12.1'
+        classpath 'org.robolectric:robolectric-gradle-plugin:0.11.+'
+        classpath 'com.droidtitan:lint-cleaner-plugin:0.3.0'
+    }
+}
+apply plugin: 'com.android.application'
+apply plugin: 'robolectric'
+apply plugin: 'com.droidtitan.lintcleaner'
+
+def versionMajor = 0
+def versionMinor = 0
+def versionPatch = 1
+def versionBuild = 0
+
+
+repositories {
+    mavenCentral()
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "20.0.0"
+
+    defaultConfig {
+         applicationId "com.jess.demo"
+         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
+         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
+         minSdkVersion 15
+         targetSdkVersion 19
+     }
+
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+    buildTypes {
+        debug {
+            runProguard false
+        }
+    }
+    sourceSets {
+        androidTest {
+            setRoot('src/test')
+        }
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+    packagingOptions {
+        exclude 'META-INF/services/javax.annotation.processing.Processor'
+    }
+
+    lintCleaner {
+        // Exclude specific files
+        exclude = ['com_crashlytics_export_strings.xml', 'config.xml']
+
+        // Ability to ignore all resource files. False by default.
+        ignoreResFiles = true
+    }
+
+    signingConfigs {
+
+        release {
+
+        }
+    }
+}
+
+robolectric {
+    include '**/Test*.class'
+}
+
+dependencies {
+    compile project(':lib')
+}
